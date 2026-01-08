@@ -1,5 +1,6 @@
 import pickle
 from typing import List
+import os
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -22,6 +23,10 @@ def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
 
 class Retriever:
     def __init__(self):
+        if not os.path.exists(config.VECTOR_STORE_PATH):
+            raise FileNotFoundError(
+                "Vector store not found. Please ingest documents first.")
+            
         # Loading vector store
         with open(config.VECTOR_STORE_PATH, "rb") as f:
             store = pickle.load(f)
@@ -44,7 +49,9 @@ class Retriever:
             cosine_similarity(query_embedding, doc_embedding)
             for doc_embedding in self.embeddings
         ]
-
+        
+        top_k = min(top_k, len(scores))
+        
         # 3. top-k indices
         top_indices = np.argsort(scores)[-top_k:][::-1]
 

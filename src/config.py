@@ -20,6 +20,9 @@ CHUNK_SIZE = 300
 # Number of overlapping characters between consecutive chunks
 CHUNK_OVERLAP = 50
 
+# Minimum number of characters for a chunk to be considered valid
+MIN_CHUNK_LENGTH = 50
+
 
 # =========================
 # Retrieval configuration

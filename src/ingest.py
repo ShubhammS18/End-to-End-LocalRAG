@@ -34,10 +34,16 @@ def chunk_text(text: str, chunk_size: int, overlap: int) -> List[str]:
     """Split text into overlapping character chunks."""
     chunks = []
     start = 0
+    text_length = len(text)
 
-    while start < len(text):
+    while start < text_length:
         end = start + chunk_size
-        chunk = text[start:end]
+        chunk = text[start:end].strip()
+        
+        # Drop empty or very small chunks
+        if len(chunk) >= config.MIN_CHUNK_LENGTH:
+            chunks.append(chunk)
+        
         chunks.append(chunk)
         start = end - overlap
 
