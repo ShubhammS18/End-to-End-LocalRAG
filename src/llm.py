@@ -11,15 +11,16 @@ import config
 
 def build_prompt(context_chunks: List[str], question: str) -> str:
     """
-    Building a prompt that instructs the LLM to answer
-    strictly using the provided context.
+    Building a strict,grounded prompt that minimizes hallucinations 
     """
-    context = "\n\n".join(context_chunks)
+    context = "\n\n---\n\n".join(context_chunks)
 
     prompt = f"""
-You are a helpful assistant.
-Answer the question using ONLY the context below.
-If the answer is not present in the context, say "I don't know".
+SYSTEM INSTRUCTIONS:
+You are an AI assistant answering questions strictly using the provided context.
+You must NOT use prior knowledge.
+If the answer is not clearly supported by the context, respond with:
+"Not found in the provided document."
 
 Context:
 {context}
@@ -27,7 +28,7 @@ Context:
 Question:
 {question}
 
-Answer:
+Answer(be concise and factual):
 """.strip()
 
     return prompt
