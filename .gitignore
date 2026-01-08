@@ -187,3 +187,5 @@ cython_debug/
 
 
 temp_upload/
+
+vector_store.pkl
