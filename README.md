@@ -65,6 +65,8 @@ Result: fewer hallucinations, more reliable retrieval, clearer demo behavior.
 
 * Very small documents can produce duplicate chunks because of overlap and short length (easy to address with deduplication).
 
+* Streamlit session state can retain stale context if the app flow isn’t reset after certain out-of-context queries.
+
 * Vector store is a pickle file (fine for v1, will replace with FAISS/OpenSearch in v3).
 
 * No reranking or citation formatting (v4).
