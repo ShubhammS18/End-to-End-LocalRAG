@@ -1,3 +1,7 @@
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 # =========================
 # Embedding configuration
 # =========================
@@ -46,3 +50,11 @@ OLLAMA_MODEL_NAME = "llama3.2:1b"
 
 # Path where vector store (embeddings + text) will be saved
 VECTOR_STORE_PATH = "vector_store.pkl"
+
+# -------------------------
+# FAISS vector store paths (v3.2)
+# -------------------------
+
+FAISS_INDEX_PATH = os.path.join(BASE_DIR, "vector_store", "index.faiss")
+CHUNKS_PATH = os.path.join(BASE_DIR, "vector_store", "chunks.pkl")
+

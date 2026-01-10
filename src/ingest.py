@@ -3,6 +3,7 @@ import pickle
 from typing import List
 
 import numpy as np
+import faiss
 from sentence_transformers import SentenceTransformer
 from pypdf import PdfReader
 
@@ -83,15 +84,22 @@ def ingest_documents(file_path: str) -> None:
     # 4. Generating embeddings
     embeddings = model.encode(chunks, show_progress_bar=True)
     embeddings = np.array(embeddings)
+    
+    # 5. Normalize embeddings
+    embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
 
-    # 5. storing embeddings + chunks
-    vector_store = {
-        "embeddings": embeddings,
-        "chunks": chunks,
-    }
+    # 6. Create FAISS index
+    embedding_dim = embeddings.shape[1]
+    index = faiss.IndexFlatIP(embedding_dim)
+    index.add(embeddings.astype("float32"))
+    
+    # 7. Save index + chunks
+    os.makedirs("vector_store", exist_ok=True)
 
-    with open(config.VECTOR_STORE_PATH, "wb") as f:
-        pickle.dump(vector_store, f)
+    faiss.write_index(index, config.FAISS_INDEX_PATH)
+
+    with open(config.CHUNKS_PATH, "wb") as f:
+        pickle.dump(chunks, f)
 
     print(f"Ingestion complete. Stored {len(chunks)} chunks.")
 

@@ -3,18 +3,12 @@ from typing import List
 import os
 
 import numpy as np
+import faiss
 from sentence_transformers import SentenceTransformer
 
 import config
 
 
-# -------------------------
-# Similarity computation
-# -------------------------
-
-def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
-    """Computing cosine similarity between two vectors."""
-    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 
 # -------------------------
@@ -23,17 +17,18 @@ def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
 
 class Retriever:
     def __init__(self):
-        if not os.path.exists(config.VECTOR_STORE_PATH):
+        if not os.path.exists(config.FAISS_INDEX_PATH):
             raise FileNotFoundError(
-                "Vector store not found. Please ingest documents first.")
+                "FAISS index not found. Please ingest documents first."
+            )
+
+        # Load FAISS index
+        self.index = faiss.read_index(config.FAISS_INDEX_PATH)
+
+        # Load chunks (index-aligned)
+        with open(config.CHUNKS_PATH, "rb") as f:
+            self.chunks = pickle.load(f)
             
-        # Loading vector store
-        with open(config.VECTOR_STORE_PATH, "rb") as f:
-            store = pickle.load(f)
-
-        self.embeddings = store["embeddings"]
-        self.chunks = store["chunks"]
-
         # Loading embedding model
         self.model = SentenceTransformer(config.EMBEDDING_MODEL_NAME)
 
@@ -42,18 +37,16 @@ class Retriever:
         Retrieve top-k most relevant text chunks for a query.
         """
         # 1. Embedding the query
-        query_embedding = self.model.encode(query)
+        query_embedding = self.model.encode(query, convert_to_numpy=True)
 
-        # 2. Computing similarity scores
-        scores = [
-            cosine_similarity(query_embedding, doc_embedding)
-            for doc_embedding in self.embeddings
-        ]
-        
-        top_k = min(top_k, len(scores))
-        
-        # 3. top-k indices
-        top_indices = np.argsort(scores)[-top_k:][::-1]
+        # 2. Normalize query (cosine similarity via inner product)
+        query_embedding = query_embedding / np.linalg.norm(query_embedding)
 
-        # 4. Returning corresponding chunks
-        return [self.chunks[i] for i in top_indices]
+        # 3. FAISS search
+        scores, indices = self.index.search(
+            query_embedding.astype("float32").reshape(1, -1),
+            top_k
+        )
+
+        # 4. Map indices to chunks
+        return [self.chunks[i] for i in indices[0] if i < len(self.chunks)]
