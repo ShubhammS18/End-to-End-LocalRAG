@@ -36,6 +36,8 @@ def chunk_text(text: str, chunk_size: int, overlap: int) -> List[str]:
     chunks = []
     start = 0
     text_length = len(text)
+    metadata = []
+    chunk_id = 0
 
     while start < text_length:
         end = start + chunk_size
@@ -44,15 +46,14 @@ def chunk_text(text: str, chunk_size: int, overlap: int) -> List[str]:
         # Drop empty or very small chunks
         if len(chunk) >= config.MIN_CHUNK_LENGTH:
             chunks.append(chunk)
+            metadata.append({"chunk_id": chunk_id, "start_char": start, "end_char": end})
+            chunk_id += 1
         
-        chunks.append(chunk)
         start = end - overlap
-
         if start < 0:
             start = 0
 
-    return chunks
-
+    return chunks, metadata
 
 # -------------------------
 # Ingestion pipeline
@@ -72,34 +73,40 @@ def ingest_documents(file_path: str) -> None:
         raise ValueError("Unsupported file type. Use PDF or TXT.")
 
     # 2. Chunking text
-    chunks = chunk_text(
+    chunks,metadata = chunk_text(
         text,
         chunk_size=config.CHUNK_SIZE,
-        overlap=config.CHUNK_OVERLAP,
+        overlap=config.CHUNK_OVERLAP
     )
+    
+    # Add document name to metadata
+    source_name = os.path.basename(file_path)
+    for m in metadata:
+        m["source"] = source_name
+
 
     # 3. Loading embedding model
     model = SentenceTransformer(config.EMBEDDING_MODEL_NAME)
 
     # 4. Generating embeddings
     embeddings = model.encode(chunks, show_progress_bar=True)
-    embeddings = np.array(embeddings)
-    
-    # 5. Normalize embeddings
-    embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
+    embeddings = np.array(embeddings).astype("float32")
 
-    # 6. Create FAISS index
+    # 5. Create FAISS index
     embedding_dim = embeddings.shape[1]
     index = faiss.IndexFlatIP(embedding_dim)
-    index.add(embeddings.astype("float32"))
+    index.add(embeddings)
     
-    # 7. Save index + chunks
+    # 6. Save index + chunks
     os.makedirs("vector_store", exist_ok=True)
 
     faiss.write_index(index, config.FAISS_INDEX_PATH)
 
     with open(config.CHUNKS_PATH, "wb") as f:
         pickle.dump(chunks, f)
+    
+    with open(config.METADATA_PATH, "wb") as f:
+        pickle.dump(metadata, f)
 
     print(f"Ingestion complete. Stored {len(chunks)} chunks.")
 
