@@ -1,12 +1,12 @@
 import pickle
-from typing import List
+from typing import List, Dict
 import os
 
 import numpy as np
 import faiss
 from sentence_transformers import SentenceTransformer
 
-import config
+from . import config
 
 
 
@@ -28,11 +28,15 @@ class Retriever:
         # Load chunks (index-aligned)
         with open(config.CHUNKS_PATH, "rb") as f:
             self.chunks = pickle.load(f)
+        
+        # Load metadata (index-aligned)
+        with open(config.METADATA_PATH, "rb") as f:
+            self.metadata = pickle.load(f)
             
         # Loading embedding model
         self.model = SentenceTransformer(config.EMBEDDING_MODEL_NAME)
 
-    def retrieve(self, query: str, top_k: int = config.TOP_K) -> List[str]:
+    def retrieve(self, query: str, top_k: int = config.TOP_K) -> List[Dict]:
         """
         Retrieve top-k most relevant text chunks for a query.
         """
@@ -47,6 +51,13 @@ class Retriever:
             query_embedding.astype("float32").reshape(1, -1),
             top_k
         )
-
-        # 4. Map indices to chunks
-        return [self.chunks[i] for i in indices[0] if i < len(self.chunks)]
+        
+        # 4. Build structured results
+        results = []
+        for idx in indices[0]:
+            if idx < len(self.chunks):
+                results.append({
+                    "text": self.chunks[idx],
+                    "metadata": self.metadata[idx]
+                })
+        return results
