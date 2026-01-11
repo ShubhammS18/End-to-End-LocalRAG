@@ -50,18 +50,24 @@ st.header("❓ Ask a Question")
 question = st.text_input("Enter your question:")
 
 if question:
-    if not os.path.exists(config.VECTOR_STORE_PATH):
+    if not os.path.exists(config.FAISS_INDEX_PATH):
         st.warning("Please ingest a document first.")
+
     else:
         with st.spinner("Retrieving context and generating answer..."):
             retriever = Retriever()
             context_chunks = retriever.retrieve(question)
-            answer = generate_answer(context_chunks, question)
+            context_texts = [item["text"] for item in context_chunks]
+            answer = generate_answer(context_texts, question)
 
         st.subheader("💬 Answer")
         st.write(answer)
 
-        with st.expander("📚 Retrieved Context"):
-            for i, chunk in enumerate(context_chunks, 1):
-                st.markdown(f"**Chunk {i}:**")
-                st.write(chunk)
+        with st.expander("📚 Retrieved Context & Sources"):
+            for i, item in enumerate(context_chunks, 1):
+                meta = item["metadata"]
+                st.markdown(
+                    f"**Chunk {i}** "
+                    f"(Source: `{meta['source']}`, Chunk ID: `{meta['chunk_id']}`)"
+                )
+                st.write(item["text"])
