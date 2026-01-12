@@ -63,11 +63,7 @@ if question:
         st.subheader("💬 Answer")
         st.write(answer)
 
-        with st.expander("📚 Retrieved Context & Sources"):
-            for i, item in enumerate(context_chunks, 1):
-                meta = item["metadata"]
-                st.markdown(
-                    f"**Chunk {i}** "
-                    f"(Source: `{meta['source']}`, Chunk ID: `{meta['chunk_id']}`)"
-                )
-                st.write(item["text"])
+        with st.expander("📚 Retrieved Context"):
+            for c in context_chunks:
+                st.markdown(f"**Rank {c['rank']} — Score {c['score']:.3f}**")
+                st.write(c["text"])

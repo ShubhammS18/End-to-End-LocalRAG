@@ -54,10 +54,12 @@ class Retriever:
         
         # 4. Build structured results
         results = []
-        for idx in indices[0]:
+        for rank, (idx, score) in enumerate(
+            zip(indices[0], scores[0]), start=1):
             if idx < len(self.chunks):
                 results.append({
-                    "text": self.chunks[idx],
-                    "metadata": self.metadata[idx]
+                    "rank": rank,
+                    "score": float(score),
+                    "text": self.chunks[idx]
                 })
         return results

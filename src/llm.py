@@ -13,7 +13,7 @@ def build_prompt(context_chunks: List[str], question: str) -> str:
     """
     Building a strict,grounded prompt that minimizes hallucinations 
     """
-    context = "\n\n---\n\n".join(context_chunks)
+    context = "\n\n".join(context_chunks)
 
     prompt = f"""
 SYSTEM INSTRUCTIONS:

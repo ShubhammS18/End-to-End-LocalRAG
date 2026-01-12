@@ -48,10 +48,13 @@ class AskRequest(BaseModel):
     question: str
     top_k: int = config.TOP_K
 
+class Citation(BaseModel):
+    rank: int
+    text: str
+
 class AskResponse(BaseModel):
     answer: str
-    citations: List[str]
-
+    citations: List[Citation]
 
 # Core RAG endpoint
 @app.post("/ask", response_model=AskResponse)
@@ -71,8 +74,13 @@ def ask_question(request: AskRequest, req: Request):
     )
     context_chunks = [r["text"] for r in results]
     answer = generate_answer(context_chunks, question)
-
+    
+    citations = [
+    {
+        "rank": i + 1,"text": chunk}
+    for i, chunk in enumerate(context_chunks) ]
+    
     return AskResponse(
     answer=answer,
-    citations=[r["metadata"]["source"] for r in results]
+    citations=citations
     )
