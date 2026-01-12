@@ -58,3 +58,10 @@ VECTOR_STORE_PATH = "vector_store.pkl"
 FAISS_INDEX_PATH = os.path.join(BASE_DIR, "vector_store", "index.faiss")
 CHUNKS_PATH = os.path.join(BASE_DIR, "vector_store", "chunks.pkl")
 METADATA_PATH = os.path.join(BASE_DIR, "vector_store", "metadata.pkl")
+
+
+# Confidence thresholds
+
+MIN_CONFIDENCE_SCORE = 0.35
+MIN_AVG_SCORE = 0.30
+MIN_RESULTS = 1

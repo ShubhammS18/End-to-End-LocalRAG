@@ -8,6 +8,7 @@ from src import config
 from src.retriever import Retriever
 from src.llm import generate_answer
 
+from src.confidence import evaluate_confidence, ConfidenceDecision
 
 
 # Lifespan (startup/shutdown)
@@ -51,6 +52,9 @@ class AskRequest(BaseModel):
 class Citation(BaseModel):
     rank: int
     text: str
+    score: float
+    source: str | None = None
+
 
 class AskResponse(BaseModel):
     answer: str
@@ -69,16 +73,38 @@ def ask_question(request: AskRequest, req: Request):
         )
 
     results = retriever.retrieve(
-        query=question,
-        top_k=request.top_k
+    query=question,
+    top_k=request.top_k
+)
+
+    confidence = evaluate_confidence(results)
+
+    # REFUSE: do not call LLM
+    if confidence["decision"] == ConfidenceDecision.REFUSE:
+        raise HTTPException(
+        status_code=422,
+        detail={
+            "message": "Insufficient context to answer safely.",
+            "reason": confidence["reason"]
+        }
     )
+
     context_chunks = [r["text"] for r in results]
+
+    # WARN or ALLOW → LLM is permitted
     answer = generate_answer(context_chunks, question)
-    
+
+
     citations = [
     {
-        "rank": i + 1,"text": chunk}
-    for i, chunk in enumerate(context_chunks) ]
+        "rank": r["rank"],
+        "text": r["text"],
+        "score": r["score"],
+        "source": r["metadata"].get("source")
+    }
+    for r in results
+    ]
+
     
     return AskResponse(
     answer=answer,

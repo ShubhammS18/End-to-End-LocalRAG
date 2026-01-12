@@ -60,6 +60,7 @@ class Retriever:
                 results.append({
                     "rank": rank,
                     "score": float(score),
-                    "text": self.chunks[idx]
+                    "text": self.chunks[idx],
+                    "metadata": self.metadata[idx]
                 })
         return results
