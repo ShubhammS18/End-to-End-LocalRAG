@@ -2,9 +2,9 @@ import os
 import streamlit as st
 
 from ingest import ingest_documents
-from retriever import Retriever
-from llm import generate_answer
-import config
+from src.retriever import Retriever
+from src.llm import generate_answer
+from src import config
 
 
 # -------------------------

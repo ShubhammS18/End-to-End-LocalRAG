@@ -7,7 +7,7 @@ import faiss
 from sentence_transformers import SentenceTransformer
 from pypdf import PdfReader
 
-import config
+from src import config
 
 
 # -------------------------

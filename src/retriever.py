@@ -6,7 +6,7 @@ import numpy as np
 import faiss
 from sentence_transformers import SentenceTransformer
 
-import config
+from src import config
 
 
 

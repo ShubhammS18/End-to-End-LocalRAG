@@ -2,7 +2,7 @@ from typing import List
 
 import ollama
 
-import config
+from src import config
 
 
 # -------------------------
