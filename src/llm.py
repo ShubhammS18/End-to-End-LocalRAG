@@ -1,8 +1,15 @@
 from typing import List
 
-import ollama
 
 from src import config
+
+import os
+import ollama
+
+os.environ["OLLAMA_HOST"] = os.getenv(
+    "OLLAMA_HOST",
+    "http://host.docker.internal:11434"
+)
 
 
 # -------------------------
