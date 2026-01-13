@@ -2,8 +2,9 @@
 
 # Minimal Local RAG — my-local-rag-v1
 
-> **Current version:** v3.0 — FAISS-based retrieval with source citations  
-> This project evolved incrementally from a minimal RAG prototype (v1) to a more realistic, explainable system (v3).
+> **Current version:** v5.0— Retrieval confidence, safety gating, minimal evaluation, and Dockerized deployment  
+> This project evolved incrementally from a minimal RAG prototype (v1) to a production-inspired, safety-aware system (v5).
+
 
  
 A minimal, local Retrieval-Augmented Generation (RAG) system I built to learn how retrieval + local LLMs work together.
@@ -21,11 +22,6 @@ This repo implements a small, end-to-end pipeline: document ingestion → chunki
 
 #### ingest a file (from project root)
 `python src/ingest.py path/to/document.pdf`
-
-#### or use the Streamlit app:
-`streamlit run src/app.py`
-
-Open the streamlit UI, upload a PDF/TXT, click Ingest Document, then ask questions in the main UI.
 
 ### How it works — 
 
@@ -49,16 +45,51 @@ Open the streamlit UI, upload a PDF/TXT, click Ingest Document, then ask questio
 
 ### High-level architecture -
 
-![Architecture Diagram](images/architecture.png)
+![Architecture Diagram](images/v5-RAG.png)
 
 
-### How I ran tests -
+### How I ran tests
 
-* Created a small sample.txt and verified python ingest.py sample.txt created vector_store.pkl.
+- Created a small `sample.txt` file and verified that:
+  
+  `python ingest.py sample.txt`
 
-* Used a Python shell to import Retriever and confirm retrieve(query) returns semantically relevant chunks.
+  correctly generated the FAISS index and metadata files.
 
-* Launched streamlit run app.py, ingested a document, asked supported and unsupported questions and validated the grounded response and the “Not found…” refusal.
+* Used a Python shell to import the retriever and confirm that:
+
+  * retrieve(query) returns semantically relevant chunks
+
+  * similarity scores are exposed in structured retrieval results
+
+* Launched the FastAPI server and tested the system using the interactive API docs:
+
+  
+  `uvicorn src.api:app --reload`
+
+* Sent both in-scope and out-of-scope queries via /ask and verified that:
+
+  * high-confidence retrievals produce grounded answers with citations
+
+  * low-confidence or unrelated queries are safely refused with an explicit reason
+
+### Minimal evaluation results
+
+A lightweight evaluation was run to validate the retrieval-confidence gating behavior.
+
+- Total evaluation queries: 17
+- Queries included:
+  - in-scope questions answerable from the ingested document
+  - intentionally out-of-scope questions
+
+**Observed outcomes**
+- Correct decisions: 14 / 17
+- False allows (unsafe answers): 3
+- False refuses: 0
+
+The system favors conservative refusal over unsafe answering.
+Observed failure cases are logged and primarily arise from embedding similarity limitations on loosely related technical queries.
+
 
 ### v1 → v2 summary -
 
@@ -90,6 +121,27 @@ Result: fewer hallucinations, more reliable retrieval, clearer demo behavior.
 
 Result: retrieval is faster, stateless, and each answer can be traced back to its source.
 
+### v4 → v5 evolution summary
+
+**v4 — Retrieval confidence & safety layer**
+- Updated the retriever to return structured results including rank and similarity score.
+- Introduced a confidence evaluation layer to decide whether it is safe to answer.
+- Added explicit refusal logic for:
+  - empty retrievals
+  - low-confidence retrievals
+- Gated LLM generation so answers are produced only when retrieval quality is sufficient.
+- Logged retrieval metrics and confidence decisions for observability and debugging.
+
+Result: the system no longer blindly trusts retrieved context and can safely refuse when confidence is low.
+
+**v5 — Minimal evaluation and deployability**
+- Created a small labeled evaluation set containing both answerable and out-of-scope queries.
+- Evaluated ALLOW vs REFUSE decisions based on retrieval confidence.
+- Tracked false-allow and false-refuse behavior to understand safety trade-offs.
+- Containerized the full FastAPI-based RAG system using Docker.
+
+Result: the RAG system is measurable, defensible, and deployable.
+
 
 ### Known limitations -
 
@@ -101,15 +153,26 @@ Result: retrieval is faster, stateless, and each answer can be traced back to it
 
 * No reranking or citation formatting (v4).
 
+* Embedding-based similarity can occasionally surface weakly related chunks for out-of-domain technical questions, leading to measured false allows.
+
+
 ### Why I built this
 
 This project is intentionally framework-light and incremental.  
 Each version focuses on a specific engineering concern:
 
-* v1 — correctness
-* v2 — grounding and reliability
-* v3 — scalability and explainability
+* v1 — correctness  
+* v2 — grounding and reliability  
+* v3 — scalability and explainability  
+* v4 — safety and confidence-aware generation  
+* v5 — evaluation and deployability
+
 
 The goal is to deeply understand how RAG systems work internally, not just how to use libraries.
 
+### Note on Streamlit UI
 
+An earlier prototype included a Streamlit-based UI for document ingestion and querying.
+The current version uses a FastAPI backend and Dockerized deployment as the primary interface.
+
+The Streamlit UI is not part of the production workflow and is retained only for reference.
