@@ -1,0 +1,20 @@
+[
+    { "question": "What is the purpose of comments in Python?", "answerable": true },
+    { "question": "What does the print() function do in Python?", "answerable": true },
+    { "question": "What is a variable in Python?", "answerable": true },
+    { "question": "What is an f-string and why is it used?", "answerable": true },
+    { "question": "What does the input() function do?", "answerable": true },
+    { "question": "What is the difference between = and == in Python?", "answerable": true },
+    { "question": "What is a list in Python?", "answerable": true },
+    { "question": "What is a dictionary in Python?", "answerable": true },
+    { "question": "What is object-oriented programming according to the book?", "answerable": true },
+    { "question": "What is data munging?", "answerable": true },
+
+    { "question": "Who created the Python programming language?", "answerable": false },
+    { "question": "What is a transformer model in machine learning?", "answerable": false },
+    { "question": "Explain reinforcement learning.", "answerable": false },
+    { "question": "What is quantum computing?", "answerable": false },
+    { "question": "Who invented Retrieval-Augmented Generation?", "answerable": false },
+    { "question": "Explain backpropagation in neural networks.", "answerable": false },
+    { "question": "What is SQL indexing?", "answerable": false }
+]
