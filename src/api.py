@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Request
+from httpx import request
 from pydantic import BaseModel
 from typing import List
 
@@ -9,6 +10,10 @@ from src.retriever import Retriever
 from src.llm import generate_answer
 
 from src.confidence import evaluate_confidence, ConfidenceDecision
+
+import logging
+from datetime import datetime
+
 
 
 # Lifespan (startup/shutdown)
@@ -37,6 +42,13 @@ app = FastAPI(
     version="4.1",
     lifespan=lifespan
 )
+
+# Logger setup
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s",
+)
+logger = logging.getLogger("rag-api")
 
 
 # Health check
@@ -76,23 +88,52 @@ def ask_question(request: AskRequest, req: Request):
     query=question,
     top_k=request.top_k
 )
+    
+    scores = [r["score"] for r in results]
 
+    logger.info(
+    "retrieval_metrics | top_k=%d | top_score=%.3f | avg_score=%.3f",
+    request.top_k,
+    max(scores) if scores else 0.0,
+    sum(scores) / len(scores) if scores else 0.0
+    )
+
+    
     confidence = evaluate_confidence(results)
+    
+    logger.info(
+    "confidence_decision | decision=%s | reason=%s",
+    confidence["decision"],
+    confidence["reason"]
+    )
 
+    
     # REFUSE: do not call LLM
     if confidence["decision"] == ConfidenceDecision.REFUSE:
+        logger.warning(
+        "query_refused | question='%s' | reason=%s",
+        question[:100],
+        confidence["reason"]
+        )
+
         raise HTTPException(
         status_code=422,
         detail={
             "message": "Insufficient context to answer safely.",
             "reason": confidence["reason"]
         }
-    )
+        )
 
     context_chunks = [r["text"] for r in results]
 
     # WARN or ALLOW → LLM is permitted
     answer = generate_answer(context_chunks, question)
+    
+    logger.info(
+    "answer_generated | decision=%s | citations=%d",
+    confidence["decision"],
+    len(results)
+    )
 
 
     citations = [
@@ -110,3 +151,4 @@ def ask_question(request: AskRequest, req: Request):
     answer=answer,
     citations=citations
     )
+
